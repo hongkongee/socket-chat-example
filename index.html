@@ -30,32 +30,41 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        const socket = io();
+        const socket = io({ // Socket.IO 클라이언트 초기화, 생성
+            auth: {
+                serverOffset: 0 // 클라이언트가 최근 서버로부터 받은 메세지의 시간을 조정
+                // 클라이언트 - 서버 간의 시간 동기화
+            }
+        });
       
         const form = document.getElementById('form');
         const input = document.getElementById('input');
         const messages = document.getElementById('messages');
       
         // 메세지 전송
-        form.addEventListener('submit', (e) => {
+        const formSubmitHandler = (e) => {
           e.preventDefault();
           if (input.value) {
-            console.log('serving message: ', input.value);
+            console.log('sending message: ', input.value);
             socket.emit('chat message', input.value); // 서버에 메세지 전송
             input.value = '';
           }
-        });
+        };
+
+        form.removeEventListener('submit', formSubmitHandler);
+        form.addEventListener('submit', formSubmitHandler);
       
         // 메세지 수신 및 표시
-        socket.on('chat message', (msg) => {
+        socket.on('chat message', (msg, serverOffset) => {
             console.log('receiving message: ', msg);
 
 
-          const item = document.createElement('li');
+          const item = document.createElement('li'); // 메세지를 html에 표시하기
           item.textContent = msg;
           messages.appendChild(item);
 
-          window.scrollTo(0, document.body.scrollHeight);
+          window.scrollTo(0, document.body.scrollHeight); // 웹 페이지의 스크롤을 가장 아래로 이동
+          socket.auth.serverOffset = serverOffset;
         });
 
         // 최초 연결시 메세지
