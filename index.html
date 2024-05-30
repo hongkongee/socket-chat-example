@@ -30,11 +30,16 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
+      let counter = 0;
         const socket = io({ // Socket.IO 클라이언트 초기화, 생성
             auth: {
                 serverOffset: 0 // 클라이언트가 최근 서버로부터 받은 메세지의 시간을 조정
                 // 클라이언트 - 서버 간의 시간 동기화
-            }
+            },
+
+            // 가능한 반복 횟수 (10초 간격으로 3회)
+            ackTimeout: 10000,
+            retries: 3,
         });
       
         const form = document.getElementById('form');
@@ -45,8 +50,12 @@
         const formSubmitHandler = (e) => {
           e.preventDefault();
           if (input.value) {
-            console.log('sending message: ', input.value);
-            socket.emit('chat message', input.value); // 서버에 메세지 전송
+            console.log(`${socket.id} is sending message : ${input.value}`);
+
+            // 고유한 offset을 계산 (각 메세지에 고유한 식별자 부여)
+            const clientOffset = `${socket.id}-${counter++}`; // 클라이언트 아이디 - 메세지 번호 (ex. tjtkdvl-231)
+
+            socket.emit('chat message', input.value, clientOffset); // 서버에 메세지, offset 전송
             input.value = '';
           }
         };

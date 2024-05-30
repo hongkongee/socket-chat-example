@@ -45,20 +45,27 @@ io.on('connection', async (socket) => {
     // socket.emit('firstConnect', {message : 'Welcome to the chat!'}); -> 자기 자신만 보이는 메세지
 
     // 메시지 수신 이벤트
-    socket.on('chat message', async (msg) => {
+    socket.on('chat message', async (msg, clientOffset, callback) => {
 
         let result;
         try {
             // 메세지를 받을 때마다 DB에 메세지 insert
-            result = await db.run('INSERT INTO messages (content) VALUES (?)', msg);
+            console.log(`In server, ${clientOffset} stores message ${msg} into DB`);
+            result = await db.run('INSERT INTO messages (content, client_offset) VALUES (?, ?)', msg, clientOffset);
         } catch (e) {
-            // TODO handle the failure
+            if (e.errno === 19 /* SQLITE_CONSTRINT*/) { // SQLite의 특정 오류
+              // 메세지가 이미 insert되어있으면 클라이언트에게 알린다.
+              callback();
+            } else {
+              // nothing to do, just let the client retry
+            }
             return;
         }
 
     
-      console.log('server gets message: ' + msg);
+      // console.log('server gets message: ' + msg);
       io.emit('chat message', msg, result.lastID); // 모든 클라이언트에 메세지 전송
+      callback();
     });
 
     if (!socket.recovered) {
