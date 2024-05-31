@@ -23,6 +23,8 @@
 
     <ul id="messages"></ul>
 
+    
+
     <form id="form" action="">
       <input id="input" autocomplete="off" /><button>Send</button>
       <button id="toggle-btn">Disconnect</button>
@@ -55,7 +57,7 @@
             // 고유한 offset을 계산 (각 메세지에 고유한 식별자 부여)
             const clientOffset = `${socket.id}-${counter++}`; // 클라이언트 아이디 - 메세지 번호 (ex. tjtkdvl-231)
 
-            socket.emit('chat message', input.value, clientOffset); // 서버에 메세지, offset 전송
+            socket.emit('chat message', input.value, clientOffset, socket.id); // 서버에 메세지, offset, id 전송
             input.value = '';
           }
         };
@@ -64,13 +66,23 @@
         form.addEventListener('submit', formSubmitHandler);
       
         // 메세지 수신 및 표시
-        socket.on('chat message', (msg, serverOffset) => {
-            console.log('receiving message: ', msg);
+        socket.on('chat message', (msg, serverOffset, id) => {
+            console.log('receiving message: ', id, ' : ', msg);
 
-
+          // 메세지 표시 코드
           const item = document.createElement('li'); // 메세지를 html에 표시하기
-          item.textContent = msg;
-          messages.appendChild(item);
+
+          const idSpan = document.createElement('span');
+          idSpan.textContent = id;
+
+          const messageSpan = document.createElement('span');
+          messageSpan.textContent = message;
+
+          item.appendChild(idSpan);
+          item.appendChild(document.createTextNode(' ')); // Add a space between the spans
+          item.appendChild(messageSpan);
+
+          messages.appendChild(item); // messages : ul 태그
 
           window.scrollTo(0, document.body.scrollHeight); // 웹 페이지의 스크롤을 가장 아래로 이동
           socket.auth.serverOffset = serverOffset;
